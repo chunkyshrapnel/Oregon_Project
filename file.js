@@ -7,8 +7,26 @@ var start_date = '2001-01-01';
 var end_date = '2001-06-01';
 
 // Select Model
-var model = 'disalexi';
+/*var model = 'disalexi';
 var image_coll = ee.ImageCollection('projects/openet/disalexi/conus/gridmet/monthly/provisional')
+  .filterDate(start_date, end_date);*/
+/*var model = 'eemetric';
+var image_coll = ee.ImageCollection('projects/openet/eemetric/conus/gridmet/monthly/provisional')
+  .filterDate(start_date, end_date)*/
+/*var model = 'geesebal'
+var image_coll = ee.ImageCollection('projects/openet/geesebal/conus/gridmet/monthly/provisional')
+  .filterDate(start_date, end_date)*/
+/*var model = 'ptjpl'
+var image_coll = ee.ImageCollection('projects/openet/ptjpl/conus/gridmet/monthly/provisional')
+  .filterDate(start_date, end_date)*/
+/*var model = 'sims';
+var image_coll = ee.ImageCollection('projects/openet/sims/conus/gridmet/monthly/provisional')
+  .filterDate(start_date, end_date);*/
+/*var model = 'ssebop';
+var image_coll = ee.ImageCollection('projects/openet/ssebop/conus/gridmet/monthly/provisional')
+  .filterDate(start_date, end_date);*/
+var model = 'ensemble';
+var image_coll = ee.ImageCollection('projects/openet/ensemble/conus/gridmet/monthly/provisional')
   .filterDate(start_date, end_date);
 
 // get state boundary of Oregon
@@ -21,20 +39,23 @@ var oregon = states.filter(ee.Filter.eq('GEOID', '41'));
 
 
 // remove all bands but et
-image_coll = image_coll.select(['et']);
+//image_coll = image_coll.select(['et']);
+
+// Remove all images that arnet in 10T or 11T
+image_coll = image_coll.filter(ee.Filter.inList('mgrs_tile', ['10T','11T']));
 
 // hacky list manipulation
 var to_list = image_coll.toList(image_coll.size());
 var size_of_sub_list = to_list.size().divide(2);
 
 // EPSG:32610 T10
-var image_coll_list = to_list.splice(size_of_sub_list, size_of_sub_list);
+var ten_t_list = to_list.splice(size_of_sub_list, size_of_sub_list);
 
 // EPSG:32611 T11
 var eleven_t_list = to_list.splice(0, size_of_sub_list);
 
 // combine the two sepearte lists into one list of list pairs
-var combinations = image_coll_list.zip(eleven_t_list);
+var combinations = ten_t_list.zip(eleven_t_list);
 
 // Why can't I reproject 10T --> 11T?
 // ELEVEN_T = ee.Image(ELEVEN_T).reproject({crs : 'EPSG:32610'});
@@ -81,7 +102,7 @@ function export_tif(img){
   //description: path,
   bucket: 'openet_temp',
   fileNamePrefix: path,
-  //crs: 'EPSG:4326',
+  crs: 'EPSG:4326',
   //crsTransform: [30, 0, 239985, 0, -30, 5299995],
   region: oregon
   
